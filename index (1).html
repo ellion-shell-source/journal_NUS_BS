@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал — груп результатів</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B3A2B;
+    --ink-soft:#3E5C4B;
+    --paper:#EFE7D8;
+    --paper-panel:#F7F2E7;
+    --line:#CFC3A8;
+    --brass:#A9813F;
+    --brass-soft:#D8C79A;
+    --red:#8C3B2E;
+    --shadow: 0 1px 0 rgba(27,58,43,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:28px 20px 18px; border-bottom:2px solid var(--ink);
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  header h1{
+    font-family:'Lora',serif; font-weight:700; font-size:1.5rem; margin:0;
+    letter-spacing:.2px;
+  }
+  header .sub{ font-size:.8rem; color:var(--ink-soft); font-style:italic; font-family:'Lora',serif;}
+  nav{
+    display:flex; gap:2px; padding:0 20px; background:var(--paper);
+    border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  nav button{
+    font-family:'IBM Plex Sans',sans-serif; font-size:.82rem; font-weight:600;
+    padding:10px 16px; background:none; border:none; cursor:pointer;
+    color:var(--ink-soft); border-bottom:3px solid transparent; letter-spacing:.3px;
+    text-transform:uppercase;
+  }
+  nav button.active{ color:var(--ink); border-bottom-color:var(--brass); }
+  main{ max-width:920px; margin:0 auto; padding:24px 20px 60px; }
+  .panel{
+    background:var(--paper-panel); border:1px solid var(--line); border-radius:2px;
+    padding:20px; margin-bottom:20px; box-shadow:var(--shadow);
+  }
+  .panel h2{
+    font-family:'Lora',serif; font-size:1.05rem; margin:0 0 14px;
+    padding-bottom:8px; border-bottom:1px solid var(--line);
+  }
+  label{ display:block; font-size:.75rem; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; letter-spacing:.4px;}
+  input,select,textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:2px;
+    background:#fff; color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:.92rem;
+    margin-bottom:12px;
+  }
+  textarea{ min-height:60px; resize:vertical; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .row > div{ flex:1; min-width:140px; }
+  button.action{
+    background:var(--ink); color:var(--paper-panel); border:none; padding:9px 18px;
+    font-weight:600; font-size:.85rem; cursor:pointer; border-radius:2px; letter-spacing:.3px;
+  }
+  button.action:hover{ background:var(--ink-soft); }
+  button.ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-soft);
+    padding:5px 10px; font-size:.75rem; cursor:pointer; border-radius:2px;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:.87rem; }
+  th{
+    text-align:left; font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:.72rem;
+    text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft);
+    border-bottom:1px solid var(--ink); padding:6px 8px;
+  }
+  td{ padding:7px 8px; border-bottom:1px solid var(--line); font-family:'IBM Plex Mono',monospace; }
+  td.text{ font-family:'IBM Plex Sans',sans-serif; }
+  .badge{
+    display:inline-block; padding:2px 7px; border-radius:2px; font-size:.7rem; font-weight:600;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .gr1{ background:#DCE6DB; color:#2C4A2E; }
+  .gr2{ background:#E6DFCB; color:#5C4A22; }
+  .gr3{ background:#E4D5D0; color:var(--red); }
+  .summary-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:16px;}
+  .gr-card{
+    border:1px solid var(--line); border-top:4px solid var(--brass); padding:14px; background:#fff;
+  }
+  .gr-card h3{ margin:0 0 6px; font-family:'Lora',serif; font-size:.95rem; }
+  .gr-card .avg{ font-family:'IBM Plex Mono',monospace; font-size:1.8rem; font-weight:600; color:var(--ink); }
+  .gr-card .meta{ font-size:.72rem; color:var(--ink-soft); margin-top:2px; }
+  .overall{
+    text-align:center; padding:18px; border:2px solid var(--ink); background:var(--brass-soft);
+  }
+  .overall .num{ font-family:'IBM Plex Mono',monospace; font-size:2.6rem; font-weight:600; }
+  .overall .lbl{ font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); }
+  .note{
+    font-size:.78rem; color:var(--ink-soft); font-style:italic; font-family:'Lora',serif;
+    margin-top:-4px; margin-bottom:12px;
+  }
+  .hint{ background:var(--brass-soft); border-left:3px solid var(--brass); padding:8px 12px; font-size:.8rem; margin-bottom:14px; }
+  .tag-strong{ color:#2C4A2E; }
+  .tag-attention{ color:var(--red); }
+  #configStatus{ font-size:.78rem; margin-top:4px; }
+  .ok{ color:#2C4A2E; }
+  .err{ color:var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Журнал груп результатів</h1>
+  <div class="sub">громадянська та історична галузь · накопичувальний облік за ГР1 / ГР2 / ГР3</div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="config" class="active">Налаштування</button>
+  <button data-tab="students">Учні</button>
+  <button data-tab="records">Журнал оцінок</button>
+  <button data-tab="notes">Формувальні нотатки</button>
+  <button data-tab="summary">Підсумки</button>
+</nav>
+
+<main>
+
+  <section id="tab-config" class="tab">
+    <div class="panel">
+      <h2>Підключення до бази (Google Таблиця)</h2>
+      <div class="hint">Встав сюди URL веб-застосунку Apps Script і токен, які отримав(-ла) під час деплою. Це зберігається лише локально в цьому браузері.</div>
+      <label>URL веб-застосунку (Deploy → Web app URL)</label>
+      <input id="cfgUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      <label>Токен доступу (Script Properties → API_TOKEN)</label>
+      <input id="cfgToken" placeholder="ваш секретний токен">
+      <button class="action" onclick="saveConfig()">Зберегти й перевірити</button>
+      <div id="configStatus"></div>
+    </div>
+  </section>
+
+  <section id="tab-students" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Додати учня</h2>
+      <div class="row">
+        <div><label>Ім'я</label><input id="stName"></div>
+        <div><label>Клас</label>
+          <select id="stClass"><option value="6">6</option><option value="8">8</option></select>
+        </div>
+      </div>
+      <button class="action" onclick="addStudent()">Додати</button>
+    </div>
+    <div class="panel">
+      <h2>Список учнів</h2>
+      <table id="studentsTable"><thead><tr><th>Ім'я</th><th>Клас</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-records" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Новий запис</h2>
+      <div class="row">
+        <div><label>Учень</label><select id="recStudent"></select></div>
+        <div><label>Дата</label><input id="recDate" type="date"></div>
+      </div>
+      <div class="row">
+        <div><label>Група результатів</label>
+          <select id="recGr">
+            <option value="ГР1">ГР1 — час і простір, взаємозв'язки</option>
+            <option value="ГР2">ГР2 — робота з інформацією</option>
+            <option value="ГР3">ГР3 — співпраця, толерантність, громадянська позиція</option>
+          </select>
+        </div>
+        <div><label>Тип роботи</label>
+          <select id="recType">
+            <option value="поточна">поточна</option>
+            <option value="підсумкова">підсумкова</option>
+            <option value="КПР">комплексна підсумкова робота</option>
+          </select>
+        </div>
+        <div><label>Бал (1–12)</label><input id="recValue" type="number" min="1" max="12"></div>
+      </div>
+      <label>Нотатка (необов'язково)</label>
+      <textarea id="recNote"></textarea>
+      <button class="action" onclick="addRecord()">Записати</button>
+    </div>
+    <div class="panel">
+      <h2>Останні записи</h2>
+      <table id="recordsTable"><thead><tr><th>Дата</th><th>Учень</th><th>ГР</th><th>Тип</th><th>Бал</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-notes" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Формувальна нотатка</h2>
+      <div class="note">Без балу — лише опис поступу. Не перетворюється автоматично на оцінку.</div>
+      <div class="row">
+        <div><label>Учень</label><select id="noteStudent"></select></div>
+        <div><label>ГР (необов'язково)</label>
+          <select id="noteGr"><option value="">—</option><option value="ГР1">ГР1</option><option value="ГР2">ГР2</option><option value="ГР3">ГР3</option></select>
+        </div>
+        <div><label>Тенденція</label>
+          <select id="noteTag"><option value="нейтрально">нейтрально</option><option value="сильне">сильне</option><option value="потребує уваги">потребує уваги</option></select>
+        </div>
+      </div>
+      <label>Текст спостереження</label>
+      <textarea id="noteText" placeholder="Напр.: впевнено орієнтується в хронології, ще плутає причини/наслідки"></textarea>
+      <button class="action" onclick="addNote()">Зберегти нотатку</button>
+    </div>
+    <div class="panel">
+      <h2>Історія спостережень</h2>
+      <table id="notesTable"><thead><tr><th>Дата</th><th>Учень</th><th>ГР</th><th>Тенденція</th><th>Текст</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-summary" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Семестрове зведення</h2>
+      <div class="row">
+        <div><label>Учень</label><select id="sumStudent"></select></div>
+        <div><label>Семестр</label><select id="sumSemester"><option value="1">I</option><option value="2">II</option></select></div>
+      </div>
+      <button class="action" onclick="loadSummary()">Показати</button>
+    </div>
+    <div id="summaryOutput"></div>
+  </section>
+
+</main>
+
+<script>
+let CONFIG = JSON.parse(localStorage.getItem('journalConfig') || '{}');
+
+document.getElementById('cfgUrl').value = CONFIG.url || '';
+document.getElementById('cfgToken').value = CONFIG.token || '';
+
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.style.display='none');
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).style.display='block';
+    if(btn.dataset.tab==='students') loadStudents();
+    if(btn.dataset.tab==='records') { loadStudentSelect('recStudent'); loadRecords(); }
+    if(btn.dataset.tab==='notes') { loadStudentSelect('noteStudent'); loadNotes(); }
+    if(btn.dataset.tab==='summary') loadStudentSelect('sumStudent');
+  });
+});
+
+async function api(action, params={}, method='GET'){
+  if(!CONFIG.url || !CONFIG.token){ alert('Спочатку налаштуйте підключення на вкладці "Налаштування"'); throw new Error('no config'); }
+  const p = Object.assign({action, token:CONFIG.token}, params);
+  let res;
+  if(method==='GET'){
+    const qs = new URLSearchParams(p).toString();
+    res = await fetch(CONFIG.url + '?' + qs);
+  } else {
+    res = await fetch(CONFIG.url, {method:'POST', body: JSON.stringify(p)});
+  }
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error);
+  return json.data;
+}
+
+function saveConfig(){
+  CONFIG = { url: document.getElementById('cfgUrl').value.trim(), token: document.getElementById('cfgToken').value.trim() };
+  localStorage.setItem('journalConfig', JSON.stringify(CONFIG));
+  const el = document.getElementById('configStatus');
+  el.textContent = 'Перевіряю...'; el.className='';
+  api('getStudents').then(()=>{
+    el.textContent = 'Підключення працює.'; el.className='ok';
+  }).catch(e=>{
+    el.textContent = 'Помилка: ' + e.message; el.className='err';
+  });
+}
+
+async function loadStudents(){
+  const students = await api('getStudents');
+  const tb = document.querySelector('#studentsTable tbody');
+  tb.innerHTML = students.map(s=>`<tr><td class="text">${s.name}</td><td>${s.class}</td>
+    <td><button class="ghost" onclick="delStudent(${s.id})">видалити</button></td></tr>`).join('');
+}
+async function addStudent(){
+  const name = document.getElementById('stName').value.trim();
+  if(!name) return;
+  await api('addStudent', {name, class: document.getElementById('stClass').value}, 'POST');
+  document.getElementById('stName').value='';
+  loadStudents();
+}
+async function delStudent(id){
+  if(!confirm('Видалити учня, лишивши його записи в базі без прив’язки?')) return;
+  await api('deleteStudent', {id}, 'POST');
+  loadStudents();
+}
+
+async function loadStudentSelect(selectId){
+  const students = await api('getStudents');
+  const sel = document.getElementById(selectId);
+  const current = sel.value;
+  sel.innerHTML = students.map(s=>`<option value="${s.id}" data-class="${s.class}">${s.name} (${s.class} кл.)</option>`).join('');
+  if(current) sel.value = current;
+}
+
+async function addRecord(){
+  const studentId = document.getElementById('recStudent').value;
+  const opt = document.getElementById('recStudent').selectedOptions[0];
+  const value = document.getElementById('recValue').value;
+  if(!studentId || !value) return alert('Оберіть учня і вкажіть бал');
+  await api('addRecord', {
+    studentId, class: opt.dataset.class,
+    date: document.getElementById('recDate').value || undefined,
+    gr: document.getElementById('recGr').value,
+    type: document.getElementById('recType').value,
+    value, note: document.getElementById('recNote').value
+  }, 'POST');
+  document.getElementById('recValue').value='';
+  document.getElementById('recNote').value='';
+  loadRecords();
+}
+async function loadRecords(){
+  const records = await api('getRecords');
+  const students = await api('getStudents');
+  const byId = Object.fromEntries(students.map(s=>[s.id,s.name]));
+  const tb = document.querySelector('#recordsTable tbody');
+  const sorted = records.sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,40);
+  tb.innerHTML = sorted.map(r=>`<tr>
+    <td>${r.date}</td><td class="text">${byId[r.studentId]||r.studentId}</td>
+    <td><span class="badge gr${r.gr.slice(-1)}">${r.gr}</span></td>
+    <td class="text">${r.type}</td><td>${r.value}</td>
+    <td><button class="ghost" onclick="delRecord(${r.id})">×</button></td></tr>`).join('');
+}
+async function delRecord(id){
+  await api('deleteRecord', {id}, 'POST');
+  loadRecords();
+}
+
+async function addNote(){
+  const studentId = document.getElementById('noteStudent').value;
+  const text = document.getElementById('noteText').value.trim();
+  if(!studentId || !text) return alert('Оберіть учня і напишіть текст');
+  await api('addNote', {
+    studentId, gr: document.getElementById('noteGr').value,
+    tag: document.getElementById('noteTag').value, text
+  }, 'POST');
+  document.getElementById('noteText').value='';
+  loadNotes();
+}
+async function loadNotes(){
+  const notes = await api('getNotes');
+  const students = await api('getStudents');
+  const byId = Object.fromEntries(students.map(s=>[s.id,s.name]));
+  const tb = document.querySelector('#notesTable tbody');
+  const sorted = notes.sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const tagClass = t => t==='сильне' ? 'tag-strong' : (t==='потребує уваги' ? 'tag-attention' : '');
+  tb.innerHTML = sorted.map(n=>`<tr>
+    <td>${n.date}</td><td class="text">${byId[n.studentId]||n.studentId}</td>
+    <td>${n.gr? `<span class="badge gr${n.gr.slice(-1)}">${n.gr}</span>`:'—'}</td>
+    <td class="text ${tagClass(n.tag)}">${n.tag}</td><td class="text">${n.text}</td></tr>`).join('');
+}
+
+async function loadSummary(){
+  const studentId = document.getElementById('sumStudent').value;
+  const opt = document.getElementById('sumStudent').selectedOptions[0];
+  const semester = document.getElementById('sumSemester').value;
+  if(!studentId) return;
+  const summary = await api('getSummary', {studentId, class: opt.dataset.class, semester});
+  const out = document.getElementById('summaryOutput');
+  const grNames = {ГР1:'час і простір', ГР2:'робота з інформацією', ГР3:'співпраця й позиція'};
+  const cards = ['ГР1','ГР2','ГР3'].map(gr=>{
+    const s = summary[gr];
+    return `<div class="gr-card">
+      <h3>${gr} <span style="font-weight:400;color:var(--ink-soft)">— ${grNames[gr]}</span></h3>
+      <div class="avg">${s.final ?? '—'}</div>
+      <div class="meta">середнє: ${s.average ?? '—'} · записів: ${s.count}
+      ${s.corrected!==null ? ' · скориговано вручну' : ''}</div>
+      <div style="margin-top:8px">
+        <input type="number" min="1" max="12" placeholder="коригувати" id="ov-${gr}" style="margin-bottom:6px">
+        <button class="ghost" onclick="saveOverride('${gr}', ${studentId}, '${opt.dataset.class}', ${semester})">зберегти корекцію</button>
+      </div>
+    </div>`;
+  }).join('');
+  out.innerHTML = `<div class="summary-grid">${cards}</div>
+    <div class="overall"><div class="num">${summary.overall ?? '—'}</div><div class="lbl">Загальна оцінка за семестр</div></div>`;
+}
+async function saveOverride(gr, studentId, cls, semester){
+  const val = document.getElementById('ov-'+gr).value;
+  if(!val) return;
+  await api('setOverride', {studentId, class:cls, semester, gr, value:val}, 'POST');
+  loadSummary();
+}
+</script>
+</body>
+</html>
