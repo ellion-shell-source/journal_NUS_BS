@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Електронний Журнал ГР</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B3A2B; --ink-soft:#3E5C4B; --paper:#EFE7D8; --paper-panel:#F7F2E7;
+    --line:#CFC3A8; --brass:#A9813F; --brass-soft:#D8C79A; --red:#8C3B2E; --shadow: 0 1px 0 rgba(27,58,43,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; min-height:100vh; }
+  header{ padding:20px; border-bottom:2px solid var(--ink); display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  header h1{ font-family:'Lora',serif; font-weight:700; font-size:1.5rem; margin:0; }
+  header .sub{ font-size:.8rem; color:var(--ink-soft); font-family:'Lora',serif; }
+  nav{ display:flex; gap:2px; padding:0 20px; background:var(--paper); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  nav button{ font-family:'IBM Plex Sans',sans-serif; font-size:.82rem; font-weight:600; padding:10px 16px; background:none; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; text-transform:uppercase; }
+  nav button.active{ color:var(--ink); border-bottom-color:var(--brass); }
+  main{ max-width:1200px; margin:0 auto; padding:20px; }
+  .panel{ background:var(--paper-panel); border:1px solid var(--line); border-radius:2px; padding:20px; margin-bottom:20px; box-shadow:var(--shadow); }
+  .panel h2{ font-family:'Lora',serif; font-size:1.1rem; margin:0 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  label{ display:block; font-size:.75rem; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; letter-spacing:.4px;}
+  input,select,textarea{ width:100%; padding:8px; border:1px solid var(--line); border-radius:2px; background:#fff; color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:.9rem; margin-bottom:12px; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .row > div { flex:1; min-width:150px; }
+  button.action{ background:var(--ink); color:var(--paper-panel); border:none; padding:10px 20px; font-weight:600; font-size:.85rem; cursor:pointer; border-radius:2px; }
+  button.action:hover{ background:var(--ink-soft); }
+  table{ width:100%; border-collapse:collapse; font-size:.87rem; background:#fff; }
+  th, td{ padding:8px; border:1px solid var(--line); text-align:left; }
+  th{ background:var(--paper-panel); color:var(--ink-soft); font-size:.75rem; text-transform:uppercase; }
+  .st-row:hover{ background:#fdfbf7; }
+  .atten-cell { text-align:center; width:65px; }
+  .score-cell { width:80px; }
+  .attendance-btn { width:100%; padding:6px; font-weight:bold; border:1px solid var(--line); background:#eee; cursor:pointer; }
+  .attendance-btn.present { background:#DCE6DB; color:#2C4A2E; }
+  .attendance-btn.absent { background:#E4D5D0; color:var(--red); }
+  
+  /* Стилі для великої матриці журналу */
+  .journal-wrapper { overflow-x: auto; margin-top:15px; border: 1px solid var(--line); }
+  .j-table th { text-align: center; font-size: 0.7rem; white-space: nowrap; }
+  .j-table td { text-align: center; font-family:'IBM Plex Mono', monospace; }
+  .j-table td.left { text-align: left; font-family: inherit; }
+  .gr-col { background: #f4eee1; font-weight: bold; }
+  .overall-col { background: var(--brass-soft); font-weight: bold; font-size: 1rem; }
+  .ok{ color:#2C4A2E; } .err{ color:var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Журнал обліку результатів</h1>
+  <div class="sub">Розподілений облік · Класи · Предмети · Накопичувальна система</div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="config" class="active">Налаштування</button>
+  <button data-tab="structure">Учні та Курси</button>
+  <button data-tab="add-lesson">Додати Заняття</button>
+  <button data-tab="journal-view">Зведена Таблиця</button>
+</nav>
+
+<main>
+
+  <!-- НАЛАШТУВАННЯ -->
+  <section id="tab-config" class="tab">
+    <div class="panel">
+      <h2>Конфігурація підключення до Google Таблиці</h2>
+      <label>URL веб-застосунку Apps Script</label>
+      <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <label>Токен доступу (API_TOKEN)</label>
+      <input id="cfgToken" type="password" placeholder="секретний токен">
+      <button class="action" onclick="saveConfig()">Зберегти та завантажити дані</button>
+      <div id="configStatus" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <!-- УЧНІ ТА КУРСИ -->
+  <section id="tab-structure" class="tab" style="display:none">
+    <div class="row">
+      <div class="panel" style="flex:1;">
+        <h2>Створити Курс (Предмет)</h2>
+        <label>Назва предмета</label>
+        <input id="cName" placeholder="Напр: Історія України, Громадянська освіта">
+        <button class="action" onclick="addCourse()">Додати курс</button>
+      </div>
+      <div class="panel" style="flex:1;">
+        <h2>Додати Учня</h2>
+        <label>ПІБ учня</label>
+        <input id="stName" placeholder="Шелест Євгеній">
+        <label>Клас</label>
+        <select id="stClass">
+          <option value="5">5 клас</option>
+          <option value="7">7 клас</option>
+          <option value="8">8 клас</option>
+        </select>
+        <button class="action" onclick="addStudent()">Додати учня</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ДОДАТИ ЗАНЯТТЯ (МАСОВЕ ВВЕДЕННЯ) -->
+  <section id="tab-add-lesson" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Параметри уроку</h2>
+      <div class="row">
+        <div>
+          <label>Клас</label>
+          <select id="lesClass" onchange="reloadAttendanceList()">
+            <option value="5">5 клас</option>
+            <option value="7">7 клас</option>
+            <option value="8">8 клас</option>
+          </select>
+        </div>
+        <div>
+          <label>Предмет / Курс</label>
+          <select id="lesCourse"></select>
+        </div>
+        <div>
+          <label>Дата</label>
+          <input id="lesDate" type="date">
+        </div>
+        <div>
+          <label>Час за розкладом</label>
+          <select id="lesTime">
+            <option value="1 урок (08:30)">1 урок (08:30)</option>
+            <option value="2 урок (09:25)">2 урок (09:25)</option>
+            <option value="3 урок (10:30)">3 lesson (10:30)</option>
+            <option value="4 урок (11:25)">4 урок (11:25)</option>
+            <option value="5 урок (12:20)">5 урок (12:20)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:2;">
+          <label>Тема заняття</label>
+          <input id="lesTopic" placeholder="Введіть тему уроку...">
+        </div>
+        <div>
+          <label>Група результатів (якщо оцінюється)</label>
+          <select id="lesGr">
+            <option value="">— Без оцінювання ГР —</option>
+            <option value="ГР1">ГР1 — Орієнтація в просторі і часі</option>
+            <option value="ГР2">ГР2 — Робота з інформацією</option>
+            <option value="ГР3">ГР3 — Громадянська позиція / Співпраця</option>
+          </select>
+        </div>
+        <div>
+          <label>Тип роботи</label>
+          <select id="lesType">
+            <option value="поточна">Поточна</option>
+            <option value="підсумкова">Підсумкова</option>
+            <option value="КПР">КПР</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Присутність та оцінки класу</h2>
+      <table id="attendanceTable">
+        <thead>
+          <tr>
+            <th>Учень</th>
+            <th style="width:120px; text-align:center;">Присутність</th>
+            <th style="width:100px;">Бал (1-12)</th>
+            <th>Коментар / Нотатка</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Генерується динамічно -->
+        </tbody>
+      </table>
+      <div style="margin-top:15px; text-align:right;">
+        <button class="action" onclick="submitLesson()">Зберегти заняття та бали</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ЗВЕДЕНА ТАБЛИЦЯ ЖУРНАЛУ -->
+  <section id="tab-journal-view" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Параметри перегляду журналу</h2>
+      <div class="row">
+        <div>
+          <label>Оберіть клас</label>
+          <select id="viewClass"></select>
+        </div>
+        <div>
+          <label>Оберіть предмет</label>
+          <select id="viewCourse"></select>
+        </div>
+        <div>
+          <label>Семестр</label>
+          <select id="viewSemester">
+            <option value="1">I Семестр</option>
+            <option value="2">II Семестр</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="action" style="width:100%; margin-bottom:12px;" onclick="loadJournalGrid()">Сформувати таблицю</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="journalResultPanel" style="display:none;">
+      <h2>Зведена відомість результатів</h2>
+      <div class="journal-wrapper">
+        <table class="j-table" id="mainJournalTable">
+          <thead>
+            <!-- Генерується динамічно -->
+          </thead>
+          <tbody>
+            <!-- Генерується динамічно -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+let CONFIG = JSON.parse(localStorage.getItem('journalConfig') || '{}');
+let DATA = { students: [], courses: [] };
+
+document.getElementById('cfgUrl').value = CONFIG.url || '';
+document.getElementById('cfgToken').value = CONFIG.token || '';
+
+// Таби
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).style.display = 'block';
+    
+    if(btn.dataset.tab === 'add-lesson') {
+      setupSelectors('lesCourse');
+      reloadAttendanceList();
+    }
+    if(btn.dataset.tab === 'journal-view') {
+      setupSelectors('viewCourse', 'viewClass');
+    }
+  });
+});
+
+function saveConfig() {
+  CONFIG = { url: document.getElementById('cfgUrl').value.trim(), token: document.getElementById('cfgToken').value.trim() };
+  localStorage.setItem('journalConfig', JSON.stringify(CONFIG));
+  fetchInitData();
+}
+
+let jsonpCounter = 0;
+function api(action, params = {}) {
+  if (!CONFIG.url || !CONFIG.token) { alert('Налаштуйте з’єднання!'); return Promise.reject(); }
+  return new Promise((resolve, reject) => {
+    const cbName = '__jCb' + (jsonpCounter++);
+    const script = document.createElement('script');
+    window[cbName] = (res) => {
+      if (res && res.ok) resolve(res.data);
+      else { alert('Помилка: ' + (res.error || 'Невідомо')); reject(); }
+      script.remove(); delete window[cbName];
+    };
+    const qs = new URLSearchParams(Object.assign({ action, token: CONFIG.token, callback: cbName }, params)).toString();
+    script.src = CONFIG.url + '?' + qs;
+    document.body.appendChild(script);
+  });
+}
+
+async function fetchInitData() {
+  const status = document.getElementById('configStatus');
+  status.textContent = 'Завантаження...'; status.className = '';
+  try {
+    DATA = await api('getInitData');
+    status.textContent = 'Дані успішно синхронізовано з Google Таблицею.'; status.className = 'ok';
+  } catch(e) {
+    status.textContent = 'Помилка авторизації або URL.'; status.className = 'err';
+  }
+}
+
+function setupSelectors(courseSelId, classSelId = null) {
+  const cSel = document.getElementById(courseSelId);
+  cSel.innerHTML = DATA.courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  
+  if(classSelId) {
+    const clSel = document.getElementById(classSelId);
+    clSel.innerHTML = `<option value="5">5 клас</option><option value="7">7 клас</option><option value="8">8 клас</option>`;
+  }
+}
+
+// Управління структурою
+async function addCourse() {
+  const name = document.getElementById('cName').value.trim();
+  if(!name) return;
+  await api('addCourse', { name });
+  document.getElementById('cName').value = '';
+  fetchInitData();
+}
+
+async function addStudent() {
+  const name = document.getElementById('stName').value.trim();
+  const cls = document.getElementById('stClass').value;
+  if(!name) return;
+  await api('addStudent', { name, class: cls });
+  document.getElementById('stName').value = '';
+  fetchInitData();
+}
+
+// Динамічний список для введення відвідуваності
+function reloadAttendanceList() {
+  const cls = document.getElementById('lesClass').value;
+  const tbody = document.querySelector('#attendanceTable tbody');
+  const filtered = DATA.students.filter(s => String(s.class) === String(cls)).sort((a,b)=>a.name.localeCompare(b.name, 'uk'));
+  
+  document.getElementById('lesDate').value = new Date().toISOString().slice(0, 10);
+
+  if(!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:gray;">Немає учнів у цьому класі. Додайте їх у вкладці Структура.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => `
+    <tr class="st-row" data-id="${s.id}">
+      <td><b>${s.name}</b></td>
+      <td class="atten-cell">
+        <button class="attendance-btn present" onclick="toggleAttendance(this)">Присутній</button>
+      </td>
+      <td class="score-cell">
+        <input type="number" min="1" max="12" class="score-input" style="margin:0; text-align:center;">
+      </td>
+      <td>
+        <input type="text" class="note-input" placeholder="Коментар до уроку..." style="margin:0;">
+      </td>
+    </tr>
+  `).join('');
+}
+
+function toggleAttendance(btn) {
+  const scoreInput = btn.closest('tr').querySelector('.score-input');
+  if(btn.classList.contains('present')) {
+    btn.classList.remove('present');
+    btn.classList.add('absent');
+    btn.textContent = 'Н';
+    scoreInput.value = '';
+    scoreInput.disabled = true;
+  } else {
+    btn.classList.remove('absent');
+    btn.classList.add('present');
+    btn.textContent = 'Присутній';
+    scoreInput.disabled = false;
+  }
+}
+
+async function submitLesson() {
+  const records = [];
+  document.querySelectorAll('#attendanceTable tbody tr').forEach(row => {
+    const studentId = row.dataset.id;
+    const isPresent = row.querySelector('.attendance-btn').classList.contains('present');
+    const scoreVal = row.querySelector('.score-input').value;
+    const noteVal = row.querySelector('.note-input').value;
+
+    let finalValue = '';
+    if(!isPresent) finalValue = 'Н';
+    else if(scoreVal) finalValue = scoreVal;
+
+    records.push({ studentId, value: finalValue, note: noteVal });
+  });
+
+  const payload = {
+    class: document.getElementById('lesClass').value,
+    courseId: document.getElementById('lesCourse').value,
+    date: document.getElementById('lesDate').value,
+    time: document.getElementById('lesTime').value,
+    topic: document.getElementById('lesTopic').value,
+    gr: document.getElementById('lesGr').value,
+    type: document.getElementById('lesType').value,
+    recordsJson: JSON.stringify(records)
+  };
+
+  await api('createLessonWithAttendance', payload);
+  alert('Урок та результати успішно збережено!');
+  document.getElementById('lesTopic').value = '';
+  reloadAttendanceList();
+}
+
+// Завантаження та відображення великої таблиці журналу
+async function loadJournalGrid() {
+  const cls = document.getElementById('viewClass').value;
+  const courseId = document.getElementById('viewCourse').value;
+  const sem = document.getElementById('viewSemester').value;
+
+  const data = await api('getJournalGrid', { class: cls, courseId: courseId, semester: sem });
+  
+  const thead = document.querySelector('#mainJournalTable thead');
+  const tbody = document.querySelector('#mainJournalTable tbody');
+  
+  // Формуємо стовпці заголовків (Дати уроків)
+  let headHtml = `<tr><th rowspan="2">Прізвище та ім'я учня</th>`;
+  data.lessons.forEach(l => {
+    const dateFormatted = l.date.slice(5, 10).replace('-', '/'); // "MM/DD"
+    const grBadge = l.gr ? ` <b style="color:var(--brass)">(${l.gr})</b>` : '';
+    headHtml += `<th title="${l.topic || 'Без теми'}">${dateFormatted}<br><small>${l.type}</small>${grBadge}</th>`;
+  });
+  headHtml += `<th colspan="2" class="gr-col">ГР1</th><th colspan="2" class="gr-col">ГР2</th><th colspan="2" class="gr-col">ГР3</th><th class="overall-col" rowspan="2">СЕМ</th></tr>`;
+  
+  // Другий рядок заголовків для середнього/фінального балів ГР
+  headHtml += `<tr>`;
+  data.lessons.forEach(() => headHtml += `<th></th>`);
+  headHtml += `<th class="gr-col">сер</th><th class="gr-col">бал</th><th class="gr-col">сер</th><th class="gr-col">бал</th><th class="gr-col">сер</th><th class="gr-col">бал</th></tr>`;
+  thead.innerHTML = headHtml;
+
+  // Формуємо рядки учнів
+  if(!data.students.length) {
+    tbody.innerHTML = `<tr><td colspan="${data.lessons.length + 8}">Немає учнів або уроків за цими параметрами.</td></tr>`;
+    document.getElementById('journalResultPanel').style.display = 'block';
+    return;
+  }
+
+  tbody.innerHTML = data.students.map(st => {
+    let rowHtml = `<tr class="st-row"><td class="left"><b>${st.name}</b></td>`;
+    
+    // Поточні оцінки
+    data.lessons.forEach(l => {
+      const val = data.recMap[l.id + '_' + st.id] || '';
+      const cellStyle = val === 'Н' ? 'color:var(--red); font-weight:bold;' : '';
+      rowHtml += `<td style="${cellStyle}">${val}</td>`;
+    });
+
+    // Результати за групами результатів (ГР)
+    ['ГР1', 'ГР2', 'ГР3'].forEach(gr => {
+      const gData = st.summary[gr] || { average: '', final: '' };
+      const avg = gData.average || '—';
+      const fin = gData.final || '—';
+      const corrStyle = gData.isOverridden ? 'color:var(--brass); font-weight:bold;' : '';
+
+      rowHtml += `
+        <td class="gr-col" style="color:gray; font-size:0.8rem;">${avg}</td>
+        <td class="gr-col" style="cursor:pointer; ${corrStyle}" onclick="promptOverride('${gr}', ${st.id}, '${cls}', '${courseId}', ${sem}, '${fin}')" title="Клікніть, щоб змінити бал вручну">${fin}</td>
+      `;
+    });
+
+    // Загальний семестровий
+    const overall = st.summary.overall || '—';
+    rowHtml += `<td class="overall-col">${overall}</td></tr>`;
+    return rowHtml;
+  }).join('');
+
+  document.getElementById('journalResultPanel').style.display = 'block';
+}
+
+async function promptOverride(gr, studentId, cls, courseId, semester, currentVal) {
+  const val = prompt(`Корекція бала для ${gr}.\nПоточний: ${currentVal}\nВведіть новий бал (1-12):`, currentVal);
+  if (val === null) return;
+  const num = parseInt(val);
+  if (isNaN(num) || num < 1 || num > 12) { alert('Некоректний бал'); return; }
+
+  await api('setOverride', { studentId, class: cls, courseId, semester, gr, value: num });
+  loadJournalGrid();
+}
+
+// Первинний запуск
+if (CONFIG.url) fetchInitData();
+</script>
+</body>
+</html>
