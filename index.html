@@ -288,7 +288,7 @@ async function addStudent(){
   loadStudents();
 }
 async function delStudent(id){
-  if(!confirm('Видалити учня та лишити його записи в базі без прив\\'язки?')) return;
+  if(!confirm('Видалити учня, лишивши його записи в базі без прив’язки?')) return;
   await api('deleteStudent', {id}, 'POST');
   loadStudents();
 }
