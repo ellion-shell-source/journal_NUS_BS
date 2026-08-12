@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал — груп результатів</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,500&family=Open+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B3A2B; --ink-soft:#3E5C4B; --paper:#EFE7D8; --paper-panel:#F7F2E7;
+    --line:#CFC3A8; --brass:#A9813F; --brass-soft:#D8C79A; --red:#8C3B2E;
+    --shadow: 0 1px 0 rgba(27,58,43,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Open Sans',sans-serif; min-height:100vh; }
+  header{ padding:28px 20px 18px; border-bottom:2px solid var(--ink); display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  header h1{ font-family:'Lora',serif; font-weight:700; font-size:1.5rem; margin:0; letter-spacing:.2px; }
+  header .sub{ font-size:.8rem; color:var(--ink-soft); font-style:italic; font-family:'Lora',serif;}
+  nav{ display:flex; gap:2px; padding:0 20px; background:var(--paper); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  nav button{ font-family:'Open Sans',sans-serif; font-size:.78rem; font-weight:600; padding:10px 14px; background:none; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; letter-spacing:.3px; text-transform:uppercase; }
+  nav button.active{ color:var(--ink); border-bottom-color:var(--brass); }
+  main{ max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+  .panel{ background:var(--paper-panel); border:1px solid var(--line); border-radius:2px; padding:20px; margin-bottom:20px; box-shadow:var(--shadow); }
+  .panel h2{ font-family:'Lora',serif; font-size:1.05rem; margin:0 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  label{ display:block; font-size:.75rem; color:var(--ink-soft); margin-bottom:4px; text-transform:uppercase; letter-spacing:.4px;}
+  input,select,textarea{ width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:2px; background:#fff; color:var(--ink); font-family:'Open Sans',sans-serif; font-size:.92rem; margin-bottom:12px; }
+  textarea{ min-height:60px; resize:vertical; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:end; }
+  .row > div{ flex:1; min-width:140px; }
+  button.action{ background:var(--ink); color:var(--paper-panel); border:none; padding:9px 18px; font-weight:600; font-size:.85rem; cursor:pointer; border-radius:2px; letter-spacing:.3px; }
+  button.action:hover{ background:var(--ink-soft); }
+  button.ghost{ background:none; border:1px solid var(--line); color:var(--ink-soft); padding:5px 10px; font-size:.75rem; cursor:pointer; border-radius:2px; }
+  button.ghost.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  a{ color:var(--ink); font-weight:600; }
+  table{ width:100%; border-collapse:collapse; font-size:.87rem; }
+  th{ text-align:left; font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); border-bottom:1px solid var(--ink); padding:6px 8px; }
+  td{ padding:7px 8px; border-bottom:1px solid var(--line); font-family:'IBM Plex Mono',monospace; vertical-align:middle; }
+  td.text{ font-family:'Open Sans',sans-serif; }
+  .badge{ display:inline-block; padding:2px 7px; border-radius:2px; font-size:.7rem; font-weight:600; font-family:'IBM Plex Mono',monospace; }
+  .gr1{ background:#DCE6DB; color:#2C4A2E; } .gr2{ background:#E6DFCB; color:#5C4A22; } .gr3{ background:#E4D5D0; color:var(--red); }
+  .weekday-picker{ display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .weekday-picker button{ width:40px; height:34px; }
+  .note{ font-size:.78rem; color:var(--ink-soft); font-style:italic; font-family:'Lora',serif; margin-top:-4px; margin-bottom:12px; }
+  .hint{ background:var(--brass-soft); border-left:3px solid var(--brass); padding:8px 12px; font-size:.8rem; margin-bottom:14px; }
+  .tag-strong{ color:#2C4A2E; } .tag-attention{ color:var(--red); }
+  #configStatus{ font-size:.78rem; margin-top:4px; } .ok{ color:#2C4A2E; } .err{ color:var(--red); }
+  .grid-wrap{ overflow-x:auto; border:1px solid var(--line); }
+  .grid-wrap table{ font-size:.8rem; }
+  .grid-wrap th, .grid-wrap td{ white-space:nowrap; }
+  .grid-wrap th.student-col, .grid-wrap td.student-col{ position:sticky; left:0; background:var(--paper-panel); z-index:2; min-width:150px; }
+  .lesson-col{ min-width:110px; text-align:center; }
+  .lesson-col select{ margin:2px 0; padding:2px; font-size:.68rem; }
+  .lesson-topic{ font-family:'Open Sans',sans-serif; font-weight:600; font-size:.72rem; border:none; background:transparent; text-align:center; padding:2px; }
+  .lesson-topic:focus{ background:#fff; }
+  .cell-input{ width:44px; text-align:center; margin:0; padding:4px 2px; font-family:'IBM Plex Mono',monospace; }
+  .cell-input.absent{ background:#E4D5D0; color:var(--red); font-weight:600; }
+  .cell-input.grade{ background:#DCE6DB; font-weight:600; }
+  .del-col{ font-size:.65rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Журнал груп результатів</h1>
+  <div class="sub">розклад · відвідуваність · оцінювання за ГР1/ГР2/ГР3</div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="config" class="active">Налаштування</button>
+  <button data-tab="students">Учні</button>
+  <button data-tab="courses">Курси</button>
+  <button data-tab="schedule">Розклад і заняття</button>
+  <button data-tab="journal">Табель</button>
+  <button data-tab="notes">Формувальні нотатки</button>
+</nav>
+
+<main>
+
+  <section id="tab-config" class="tab">
+    <div class="panel">
+      <h2>Підключення до бази (Google Таблиця)</h2>
+      <div class="hint">Встав сюди URL веб-застосунку Apps Script і токен, які отримав(-ла) під час деплою. Це зберігається лише локально в цьому браузері.</div>
+      <label>URL веб-застосунку (Deploy → Web app URL)</label>
+      <input id="cfgUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      <label>Токен доступу (Script Properties → API_TOKEN)</label>
+      <input id="cfgToken" placeholder="ваш секретний токен">
+      <button class="action" onclick="saveConfig()">Зберегти й перевірити</button>
+      <div id="configStatus"></div>
+    </div>
+  </section>
+
+  <section id="tab-students" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Додати учня</h2>
+      <div class="row">
+        <div><label>Ім'я</label><input id="stName"></div>
+        <div><label>Клас</label><select id="stClass"><option value="6">6</option><option value="8">8</option></select></div>
+      </div>
+      <button class="action" onclick="addStudent()">Додати</button>
+    </div>
+    <div class="panel">
+      <h2>6 клас <span style="font-weight:400;color:var(--ink-soft);font-size:.8rem">— за алфавітом</span></h2>
+      <table id="studentsTable6"><thead><tr><th>Ім'я</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>8 клас <span style="font-weight:400;color:var(--ink-soft);font-size:.8rem">— за алфавітом</span></h2>
+      <table id="studentsTable8"><thead><tr><th>Ім'я</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-courses" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Додати курс / предмет</h2>
+      <div class="row">
+        <div><label>Назва</label><input id="crName" placeholder="напр. Історія: Україна і світ"></div>
+        <div><label>Клас</label><select id="crClass"><option value="6">6</option><option value="8">8</option></select></div>
+      </div>
+      <button class="action" onclick="addCourse()">Додати</button>
+    </div>
+    <div class="panel">
+      <h2>Курси</h2>
+      <div class="note">Клікніть на назву курсу, щоб перейти до розкладу й журналу цього курсу.</div>
+      <table id="coursesTable"><thead><tr><th>Назва</th><th>Клас</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-schedule" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Створити розклад на період</h2>
+      <div class="row">
+        <div><label>Курс</label><select id="schCourse"></select></div>
+        <div><label>Час заняття</label><input id="schTime" type="time" value="09:00"></div>
+      </div>
+      <label>Дні тижня</label>
+      <div class="weekday-picker" id="weekdayPicker">
+        <button type="button" class="ghost" data-day="1">Пн</button>
+        <button type="button" class="ghost" data-day="2">Вт</button>
+        <button type="button" class="ghost" data-day="3">Ср</button>
+        <button type="button" class="ghost" data-day="4">Чт</button>
+        <button type="button" class="ghost" data-day="5">Пт</button>
+        <button type="button" class="ghost" data-day="6">Сб</button>
+        <button type="button" class="ghost" data-day="7">Нд</button>
+      </div>
+      <div class="row">
+        <div><label>Період з</label><input id="schFrom" type="date"></div>
+        <div><label>Період по</label><input id="schTo" type="date"></div>
+      </div>
+      <button class="action" onclick="createSchedule()">Згенерувати заняття</button>
+    </div>
+
+    <div class="panel">
+      <h2>Журнал курсу</h2>
+      <div class="row"><div><label>Курс</label><select id="gridCourse" onchange="loadGrid()"></select></div></div>
+      <div class="note">Клітинка: бал 1–12, або "н" — відсутність. Порожньо — ще не відмічено. Заголовок стовпця: тема заняття (редагована), група результатів і тип роботи для цього заняття.</div>
+      <div id="gridWrap" class="grid-wrap"></div>
+    </div>
+  </section>
+
+  <section id="tab-journal" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Табель</h2>
+      <div class="row">
+        <div><label>Клас</label><select id="jClass" onchange="onJournalClassChange()"><option value="6">6</option><option value="8">8</option></select></div>
+        <div><label>Курс</label><select id="jCourse"></select></div>
+        <div><label>Семестр</label><select id="jSemester"><option value="1">I</option><option value="2">II</option></select></div>
+      </div>
+      <button class="action" onclick="loadJournal()">Показати</button>
+    </div>
+    <div class="panel" id="journalOutput" style="display:none"></div>
+  </section>
+
+  <section id="tab-notes" class="tab" style="display:none">
+    <div class="panel">
+      <h2>Формувальна нотатка</h2>
+      <div class="note">Без балу — лише опис поступу. Не перетворюється автоматично на оцінку.</div>
+      <div class="row">
+        <div><label>Учень</label><select id="noteStudent"></select></div>
+        <div><label>Курс</label><select id="noteCourse"><option value="">—</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>ГР (необов'язково)</label><select id="noteGr"><option value="">—</option><option value="ГР1">ГР1</option><option value="ГР2">ГР2</option><option value="ГР3">ГР3</option></select></div>
+        <div><label>Тенденція</label><select id="noteTag"><option value="нейтрально">нейтрально</option><option value="сильне">сильне</option><option value="потребує уваги">потребує уваги</option></select></div>
+      </div>
+      <label>Текст спостереження</label>
+      <textarea id="noteText" placeholder="Напр.: впевнено орієнтується в хронології, ще плутає причини/наслідки"></textarea>
+      <button class="action" onclick="addNote()">Зберегти нотатку</button>
+    </div>
+    <div class="panel">
+      <h2>Історія спостережень</h2>
+      <table id="notesTable"><thead><tr><th>Дата</th><th>Учень</th><th>Курс</th><th>ГР</th><th>Тенденція</th><th>Текст</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+let CONFIG = JSON.parse(localStorage.getItem('journalConfig') || '{}');
+let selectedWeekdays = new Set();
+
+document.getElementById('cfgUrl').value = CONFIG.url || '';
+document.getElementById('cfgToken').value = CONFIG.token || '';
+
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=> activateTab(btn.dataset.tab));
+});
+function activateTab(tab, courseId){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.style.display='none');
+  document.querySelector(`nav button[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('tab-'+tab).style.display='block';
+  if(tab==='students') loadStudents();
+  if(tab==='courses') loadCourses();
+  if(tab==='schedule') {
+    loadCourseSelect('schCourse').then(()=>{ if(courseId) document.getElementById('schCourse').value=courseId; });
+    loadCourseSelect('gridCourse').then(()=>{ if(courseId){ document.getElementById('gridCourse').value=courseId; loadGrid(); } });
+  }
+  if(tab==='journal') loadCourseSelect('jCourse', document.getElementById('jClass').value);
+  if(tab==='notes') { loadStudentSelect('noteStudent'); loadCourseSelect('noteCourse', null, true); loadNotes(); }
+}
+async function goToSchedule(courseId){ activateTab('schedule', courseId); }
+
+document.querySelectorAll('#weekdayPicker button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const d = b.dataset.day;
+    if(selectedWeekdays.has(d)){ selectedWeekdays.delete(d); b.classList.remove('active'); }
+    else { selectedWeekdays.add(d); b.classList.add('active'); }
+  });
+});
+
+/* ---------- JSONP-звʼязок з Apps Script (обхід CORS) ---------- */
+let jsonpCounter = 0;
+function jsonp_(params){
+  return new Promise((resolve, reject)=>{
+    const cbName = '__journalCb' + (jsonpCounter++);
+    const timer = setTimeout(()=>{ cleanup(); reject(new Error('Час очікування вичерпано — перевірте URL')); }, 15000);
+    const script = document.createElement('script');
+    function cleanup(){ clearTimeout(timer); delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); }
+    window[cbName] = function(data){
+      cleanup();
+      if(data && data.ok) resolve(data.data);
+      else reject(new Error((data && data.error) || 'Невідома помилка'));
+    };
+    const qs = new URLSearchParams(Object.assign({}, params, {callback: cbName})).toString();
+    script.src = CONFIG.url + '?' + qs;
+    script.onerror = ()=>{ cleanup(); reject(new Error('Не вдалося завантажити — перевірте URL веб-застосунку')); };
+    document.body.appendChild(script);
+  });
+}
+async function api(action, params={}){
+  if(!CONFIG.url || !CONFIG.token){ alert('Спочатку налаштуйте підключення на вкладці "Налаштування"'); throw new Error('no config'); }
+  return jsonp_(Object.assign({action, token: CONFIG.token}, params));
+}
+
+function saveConfig(){
+  CONFIG = { url: document.getElementById('cfgUrl').value.trim(), token: document.getElementById('cfgToken').value.trim() };
+  localStorage.setItem('journalConfig', JSON.stringify(CONFIG));
+  const el = document.getElementById('configStatus');
+  el.textContent = 'Перевіряю...'; el.className='';
+  api('getStudents').then(()=>{ el.textContent = 'Підключення працює.'; el.className='ok'; })
+    .catch(e=>{ el.textContent = 'Помилка: ' + e.message; el.className='err'; });
+}
+
+const sortByName_ = arr => arr.slice().sort((a,b)=> String(a.name).localeCompare(String(b.name), 'uk'));
+
+/* ---------- Учні ---------- */
+async function loadStudents(){
+  const students = await api('getStudents');
+  const byClass = cls => sortByName_(students.filter(s=> String(s.class)===cls));
+  const render = (list, sel) => document.querySelector(sel).innerHTML = list.map(s=>
+    `<tr><td class="text">${s.name}</td><td><button class="ghost" onclick="delStudent(${s.id})">видалити</button></td></tr>`).join('');
+  render(byClass('6'), '#studentsTable6 tbody');
+  render(byClass('8'), '#studentsTable8 tbody');
+}
+async function addStudent(){
+  const name = document.getElementById('stName').value.trim();
+  if(!name) return;
+  await api('addStudent', {name, class: document.getElementById('stClass').value});
+  document.getElementById('stName').value=''; loadStudents();
+}
+async function delStudent(id){
+  if(!confirm('Видалити учня, лишивши його записи в базі без прив’язки?')) return;
+  await api('deleteStudent', {id}); loadStudents();
+}
+async function loadStudentSelect(selectId){
+  const students = await api('getStudents');
+  const sel = document.getElementById(selectId); const current = sel.value;
+  const groupHtml = cls => sortByName_(students.filter(s=> String(s.class)===cls)).map(s=>`<option value="${s.id}" data-class="${s.class}">${s.name}</option>`).join('');
+  sel.innerHTML = `<optgroup label="6 клас">${groupHtml('6')}</optgroup><optgroup label="8 клас">${groupHtml('8')}</optgroup>`;
+  if(current) sel.value = current;
+}
+
+/* ---------- Курси ---------- */
+async function loadCourses(){
+  const courses = await api('getCourses');
+  document.querySelector('#coursesTable tbody').innerHTML = courses.map(c=>
+    `<tr><td class="text"><a href="#" onclick="goToSchedule(${c.id}); return false;">${c.name}</a></td><td>${c.class}</td><td><button class="ghost" onclick="delCourse(${c.id})">видалити</button></td></tr>`).join('');
+}
+async function addCourse(){
+  const name = document.getElementById('crName').value.trim();
+  if(!name) return;
+  await api('addCourse', {name, class: document.getElementById('crClass').value});
+  document.getElementById('crName').value=''; loadCourses();
+}
+async function delCourse(id){
+  if(!confirm('Видалити курс?')) return;
+  await api('deleteCourse', {id}); loadCourses();
+}
+async function loadCourseSelect(selectId, filterClass, allowEmpty){
+  const courses = await api('getCourses', filterClass ? {class: filterClass} : {});
+  const sel = document.getElementById(selectId); const current = sel.value;
+  const opts = courses.map(c=>`<option value="${c.id}" data-class="${c.class}">${c.name} (${c.class} кл.)</option>`).join('');
+  sel.innerHTML = (allowEmpty ? '<option value="">—</option>' : '') + opts;
+  if(current) sel.value = current;
+}
+
+/* ---------- Розклад ---------- */
+async function createSchedule(){
+  const courseId = document.getElementById('schCourse').value;
+  if(!courseId) return alert('Оберіть курс');
+  if(selectedWeekdays.size===0) return alert('Оберіть хоча б один день тижня');
+  const from = document.getElementById('schFrom').value, to = document.getElementById('schTo').value;
+  if(!from || !to) return alert('Вкажіть період');
+  const res = await api('addSchedule', {
+    courseId, weekdays: Array.from(selectedWeekdays).join(','),
+    time: document.getElementById('schTime').value, dateFrom: from, dateTo: to
+  });
+  alert('Створено занять: ' + res.lessonsCreated);
+  document.getElementById('gridCourse').value = courseId;
+  loadGrid();
+}
+
+/* ---------- Журнал курсу: двовимірна таблиця учні × заняття ---------- */
+async function loadGrid(){
+  const courseId = document.getElementById('gridCourse').value;
+  const wrap = document.getElementById('gridWrap');
+  if(!courseId){ wrap.innerHTML=''; return; }
+  const data = await api('getCourseGrid', {courseId});
+  renderGrid(data);
+}
+function renderGrid(data){
+  const wrap = document.getElementById('gridWrap');
+  const grHtml = (lessonId, current) => `<select onchange="updateLessonMeta(${lessonId},'gr',this.value)">
+    ${['ГР1','ГР2','ГР3'].map(g=>`<option value="${g}" ${g===current?'selected':''}>${g}</option>`).join('')}</select>`;
+  const typeHtml = (lessonId, current) => `<select onchange="updateLessonMeta(${lessonId},'type',this.value)">
+    ${['поточна','підсумкова','КПР'].map(t=>`<option value="${t}" ${t===current?'selected':''}>${t}</option>`).join('')}</select>`;
+
+  let html = '<table><thead><tr><th class="student-col">Учень</th>';
+  data.lessons.forEach(l=>{
+    html += `<th class="lesson-col">
+      <input class="lesson-topic" value="${(l.topic||'').replace(/"/g,'&quot;')}" onblur="updateLessonMeta(${l.id},'topic',this.value)">
+      <div style="font-weight:400;font-size:.65rem;color:var(--ink-soft)">${l.date}</div>
+      ${grHtml(l.id, l.gr)}${typeHtml(l.id, l.type)}
+      <button class="ghost del-col" onclick="delLessonCol(${l.id})">× заняття</button>
+    </th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  data.students.forEach(s=>{
+    html += `<tr><td class="student-col text">${s.name}</td>`;
+    data.lessons.forEach(l=>{
+      const cell = (data.cells[l.id] && data.cells[l.id][s.id]) || {};
+      let val = '';
+      if(cell.value !== undefined) val = cell.value;
+      else if(cell.present === false) val = 'н';
+      const cls = cell.value !== undefined ? 'grade' : (cell.present===false ? 'absent' : '');
+      html += `<td class="lesson-col"><input class="cell-input ${cls}" value="${val}"
+        onblur="saveCell(${l.id}, ${s.id}, this)"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = data.lessons.length ? html : '<div class="note" style="padding:16px">Для цього курсу ще немає згенерованих занять — створіть розклад вище.</div>';
+}
+async function updateLessonMeta(lessonId, field, value){
+  await api('updateLesson', {id: lessonId, [field]: value});
+}
+async function delLessonCol(lessonId){
+  if(!confirm('Видалити це заняття разом з оцінками й відвідуваністю?')) return;
+  await api('deleteLesson', {id: lessonId});
+  loadGrid();
+}
+async function saveCell(lessonId, studentId, input){
+  const val = input.value.trim();
+  try{
+    await api('saveCell', {lessonId, studentId, value: val});
+    input.className = 'cell-input' + (val.toLowerCase()==='н' ? ' absent' : (val ? ' grade' : ''));
+  }catch(e){
+    alert(e.message);
+    loadGrid();
+  }
+}
+
+/* ---------- Табель ---------- */
+function onJournalClassChange(){ loadCourseSelect('jCourse', document.getElementById('jClass').value); }
+async function loadJournal(){
+  const cls = document.getElementById('jClass').value;
+  const courseId = document.getElementById('jCourse').value;
+  if(!courseId) return alert('Оберіть курс');
+  const semester = document.getElementById('jSemester').value;
+  const summary = await api('getClassSummary', {class: cls, courseId, semester});
+  const sorted = sortByName_(summary);
+  const out = document.getElementById('journalOutput');
+  out.style.display='block';
+  out.innerHTML = `<h2>Клас ${cls} · семестр ${semester==='1'?'I':'II'}</h2>
+    <table><thead><tr><th>Учень</th><th>ГР1</th><th>ГР2</th><th>ГР3</th><th>Загальна</th></tr></thead>
+    <tbody>${sorted.map(s=>`<tr>
+      <td class="text">${s.name}</td>
+      <td><span class="badge gr1">${s.ГР1.final ?? '—'}</span></td>
+      <td><span class="badge gr2">${s.ГР2.final ?? '—'}</span></td>
+      <td><span class="badge gr3">${s.ГР3.final ?? '—'}</span></td>
+      <td style="font-weight:600">${s.overall ?? '—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- Формувальні нотатки ---------- */
+async function addNote(){
+  const studentId = document.getElementById('noteStudent').value;
+  const text = document.getElementById('noteText').value.trim();
+  if(!studentId || !text) return alert('Оберіть учня і напишіть текст');
+  await api('addNote', {
+    studentId, courseId: document.getElementById('noteCourse').value,
+    gr: document.getElementById('noteGr').value, tag: document.getElementById('noteTag').value, text
+  });
+  document.getElementById('noteText').value=''; loadNotes();
+}
+async function loadNotes(){
+  const notes = await api('getNotes');
+  const students = await api('getStudents');
+  const courses = await api('getCourses');
+  const byId = Object.fromEntries(students.map(s=>[s.id,s.name]));
+  const courseById = Object.fromEntries(courses.map(c=>[c.id,c.name]));
+  const sorted = notes.sort((a,b)=> new Date(b.date)-new Date(a.date));
+  const tagClass = t => t==='сильне' ? 'tag-strong' : (t==='потребує уваги' ? 'tag-attention' : '');
+  document.querySelector('#notesTable tbody').innerHTML = sorted.map(n=>`<tr>
+    <td>${n.date}</td><td class="text">${byId[n.studentId]||n.studentId}</td>
+    <td class="text">${courseById[n.courseId] || '—'}</td>
+    <td>${n.gr? `<span class="badge gr${n.gr.slice(-1)}">${n.gr}</span>`:'—'}</td>
+    <td class="text ${tagClass(n.tag)}">${n.tag}</td><td class="text">${n.text}</td></tr>`).join('');
+}
+</script>
+</body>
+</html>
